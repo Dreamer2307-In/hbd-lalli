@@ -1,0 +1,933 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>HBD</title>
+
+  <!-- Tailwind CSS for responsive layout & utility styling -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Canvas Confetti CDN for celebratory confetti bursts -->
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
+
+  <!-- Google Fonts: Playfair Display (elegant serif), Caveat (handwritten notes), Plus Jakarta Sans (clean UI) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;600;700&family=Playfair+Display:ital,wght@0,600;0,700;1,500&family=Plus+Jakarta+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            serif: ['"Playfair Display"', 'Georgia', 'serif'],
+            handwriting: ['"Caveat"', 'cursive'],
+            sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+          },
+          colors: {
+            cream: '#FDF8F2',
+            parchment: '#F7EFE5',
+            blush: '#FADADD',
+            roseDust: '#E899A8',
+            terracotta: '#D97B66',
+            cocoa: '#4A3728',
+            warmWood: '#E6D5C3',
+            sage: '#D8E2DC',
+            butter: '#FFF1C1',
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    /* ==========================================================================
+       CUSTOM SCRAPBOOK TEXTURES & CANDLE ANIMATIONS
+       ========================================================================== */
+    body {
+      background-color: #FDF8F2;
+      color: #4A3728;
+      overflow-x: hidden;
+      background-image:
+        radial-gradient(rgba(217, 123, 102, 0.08) 1px, transparent 0),
+        radial-gradient(rgba(74, 55, 40, 0.05) 1px, transparent 0);
+      background-size: 32px 32px;
+      background-position: 0 0, 16px 16px;
+    }
+
+    /* Flickering Candle Flame */
+    .candle-flame {
+      transform-origin: center bottom;
+      animation: flicker 1.4s infinite alternate ease-in-out;
+      transition: opacity 0.35s ease, transform 0.35s ease;
+    }
+    .candle-flame:nth-child(2) { animation-delay: 0.25s; }
+    .candle-flame:nth-child(3) { animation-delay: 0.5s; }
+
+    @keyframes flicker {
+      0%   { transform: scale(1) rotate(-2deg); opacity: 0.95; }
+      35%  { transform: scale(1.06, 0.96) rotate(2deg); opacity: 1; }
+      70%  { transform: scale(0.95, 1.05) rotate(-1deg); opacity: 0.9; }
+      100% { transform: scale(1.03) rotate(1.5deg); opacity: 1; }
+    }
+
+    /* Extinguished Flame State */
+    .candles-blown .candle-flame {
+      opacity: 0 !important;
+      transform: scale(0.1) translateY(6px) !important;
+      animation: none;
+    }
+
+    /* Candle Glow Halo */
+    .candle-halo {
+      animation: pulseGlow 2s infinite alternate ease-in-out;
+      transition: opacity 0.4s ease;
+    }
+    .candles-blown .candle-halo {
+      opacity: 0 !important;
+    }
+
+    @keyframes pulseGlow {
+      from { opacity: 0.45; transform: scale(0.95); }
+      to   { opacity: 0.8; transform: scale(1.08); }
+    }
+
+    /* Smoke Wisps rising when candles are blown out */
+    .smoke-wisp {
+      opacity: 0;
+      stroke-dasharray: 40;
+      stroke-dashoffset: 40;
+    }
+    .candles-blown .smoke-wisp {
+      animation: riseSmoke 2.4s ease-out forwards;
+    }
+    .candles-blown .smoke-wisp.delay-1 { animation-delay: 0.12s; }
+    .candles-blown .smoke-wisp.delay-2 { animation-delay: 0.24s; }
+
+    @keyframes riseSmoke {
+      0% {
+        opacity: 0;
+        stroke-dashoffset: 40;
+        transform: translateY(0) scaleX(0.8);
+      }
+      25% {
+        opacity: 0.75;
+      }
+      100% {
+        opacity: 0;
+        stroke-dashoffset: 0;
+        transform: translateY(-28px) scaleX(1.3);
+      }
+    }
+
+    /* ==========================================================================
+       WOODEN / TEXTURED MEMORY DESK & POLAROIDS
+       ========================================================================== */
+    .memory-desk {
+      background-color: #E8D7C5;
+      background-image:
+        repeating-linear-gradient(
+          90deg,
+          rgba(139, 101, 68, 0.04) 0px,
+          rgba(139, 101, 68, 0.04) 2px,
+          transparent 2px,
+          transparent 18px
+        ),
+        radial-gradient(circle at 50% 35%, rgba(255, 250, 242, 0.55), rgba(196, 169, 142, 0.45));
+      box-shadow:
+        inset 0 8px 24px rgba(74, 55, 40, 0.12),
+        inset 0 -8px 24px rgba(74, 55, 40, 0.12);
+    }
+
+    /* Polaroid Card Styling */
+    .polaroid-card {
+      touch-action: none; /* Crucial for smooth dragging on mobile without scrolling page */
+      user-select: none;
+      -webkit-user-select: none;
+      transition: box-shadow 0.2s ease, transform 0.25s cubic-bezier(0.22, 1, 0.36, 1);
+      will-change: transform, left, top;
+    }
+    .polaroid-card.is-dragging {
+      transition: box-shadow 0.15s ease; /* Disable position transition while actively dragging */
+      box-shadow: 0 24px 38px -8px rgba(74, 55, 40, 0.35), 0 10px 16px -6px rgba(74, 55, 40, 0.2);
+      cursor: grabbing !important;
+    }
+
+    /* Washi Tape decorative strips */
+    .washi-tape {
+      background: rgba(250, 218, 221, 0.75);
+      backdrop-filter: blur(2px);
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+    }
+
+    /* Ruled Paper Lines for the Final Letter */
+    .letter-paper {
+      background-color: #FFFDF9;
+      background-image: linear-gradient(to bottom, transparent 31px, rgba(217, 123, 102, 0.16) 32px);
+      background-size: 100% 32px;
+      line-height: 32px;
+    }
+
+    /* Gentle float animation */
+    @keyframes gentleFloat {
+      0%, 100% { transform: translateY(0px); }
+      50%      { transform: translateY(-6px); }
+    }
+    .animate-float {
+      animation: gentleFloat 3.5s ease-in-out infinite;
+    }
+  </style>
+</head>
+<body class="antialiased selection:bg-blush selection:text-cocoa">
+  <!-- ========================================================================
+       AUDIO PLAYERS & FLOATING MUSIC TOGGLE BUTTON
+       ======================================================================== -->
+  <audio id="song-hero" src="hbd.mp3" loop preload="auto"></audio>
+  <audio id="song-memories" src="last.mp3" loop preload="auto"></audio>
+  <audio id="song-letter" src="mem.mp3" loop preload="auto"></audio>
+
+  <button id="music-toggle" style="position: fixed; bottom: 20px; right: 20px; z-index: 9999; padding: 10px 16px; border-radius: 50px; border: none; background: #ff6b81; color: white; font-weight: bold; cursor: pointer; box-shadow: 0 4px 12px rgba(0,0,0,0.2);">
+    🎵 Play Music
+  </button>
+
+  <!-- ========================================================================
+       SECTION 1: HERO / LANDING SECTION (BIRTHDAY CAKE & CANDLE BLOW)
+       ======================================================================== -->
+  <header id="hero" class="relative min-h-screen flex flex-col items-center justify-center px-4 py-12 text-center overflow-hidden">
+
+    <!-- Decorative Floating Scrapbook Doodles -->
+    <div class="pointer-events-none absolute top-8 left-6 sm:left-16 text-roseDust/60 animate-float" aria-hidden="true">
+      <svg width="44" height="44" viewBox="0 0 24 24" fill="currentColor">
+        <path d="M12 2L14.4 9.6L22 12L14.4 14.4L12 22L9.6 14.4L2 12L9.6 9.6L12 2Z"/>
+      </svg>
+    </div>
+    <div class="pointer-events-none absolute top-16 right-8 sm:right-20 text-terracotta/50 animate-float" style="animation-delay: 1.2s;" aria-hidden="true">
+      <svg width="36" height="36" viewBox="0 0 24 24" fill="currentColor">
+        <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+      </svg>
+    </div>
+
+    <!-- Top Scrapbook Tag -->
+    <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-parchment border border-roseDust/40 shadow-sm mb-5">
+      <span class="text-sm font-medium tracking-wide text-terracotta uppercase">TOHFAA KABOOL KARO 😭✨</span>
+    </div>
+
+    <!-- ======================================================================
+         CUSTOMIZE HERE: CHANGE YOUR BEST FRIEND'S NAME & SUBTITLE
+         ====================================================================== -->
+    <h1 class="font-serif text-4xl sm:text-6xl md:text-7xl font-bold text-cocoa tracking-tight leading-tight max-w-3xl">
+      HAPIIESTT BIRTHDAYY <span class="text-terracotta italic underline decoration-blush decoration-wavy underline-offset-8">LALLI🐃</span>
+    </h1>
+    <p class="mt-4 max-w-lg text-base sm:text-lg text-cocoa/80 font-sans leading-relaxed">
+      Chl ab ankhien bnd krke koi dhnkii si WISH mang 🕯️💛
+    </p>
+
+    <!-- ======================================================================
+         INTERACTIVE MULTI-LAYERED SVG BIRTHDAY CAKE
+         ====================================================================== -->
+    <div id="cakeContainer" class="relative mt-6 mb-4 w-full max-w-[330px] sm:max-w-[380px] select-none">
+      <svg viewBox="0 0 360 310" class="w-full h-auto drop-shadow-xl overflow-visible" role="img" aria-label="Birthday cake with three lit candles">
+        <defs>
+          <!-- Warm Flame Gradient -->
+          <radialGradient id="flameGrad" cx="50%" cy="65%" r="55%">
+            <stop offset="0%" stop-color="#FFFDF0" />
+            <stop offset="45%" stop-color="#FFD166" />
+            <stop offset="85%" stop-color="#F77F00" />
+            <stop offset="100%" stop-color="#D62828" stop-opacity="0" />
+          </radialGradient>
+
+          <!-- Soft Halo Behind Flames -->
+          <radialGradient id="haloGrad" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stop-color="#FFE599" stop-opacity="0.85" />
+            <stop offset="100%" stop-color="#FFE599" stop-opacity="0" />
+          </radialGradient>
+
+          <!-- Cake Sponge & Frosting Gradients -->
+          <linearGradient id="bottomTierGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" stop-color="#FADADD" />
+            <stop offset="100%" stop-color="#F2B5C0" />
+          </linearGradient>
+          <linearGradient id="topTierGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" stop-color="#FFF3D6" />
+            <stop offset="100%" stop-color="#F7DFAC" />
+          </linearGradient>
+        </defs>
+
+        <!-- Cake Stand / Vintage Scalloped Plate -->
+        <ellipse cx="180" cy="272" rx="152" ry="20" fill="#E6D5C3" />
+        <ellipse cx="180" cy="267" rx="148" ry="18" fill="#FFFDF9" stroke="#D9C3B0" stroke-width="2" />
+        <path d="M148 284 L212 284 L224 300 L136 300 Z" fill="#E6D5C3" />
+        <ellipse cx="180" cy="300" rx="54" ry="7" fill="#D4BFA9" />
+
+        <!-- Bottom Cake Tier -->
+        <rect x="65" y="190" width="230" height="74" rx="16" fill="url(#bottomTierGrad)" />
+        <!-- Bottom Tier Cream Filling Stripe -->
+        <rect x="65" y="224" width="230" height="8" fill="#FFFDF9" opacity="0.8" />
+        <!-- Bottom Tier Drip Frosting -->
+        <path d="M65 198 Q78 214 91 198 Q104 218 117 198 Q130 212 143 198 Q156 220 169 198 Q182 213 195 198 Q208 219 221 198 Q234 212 247 198 Q260 217 273 198 Q284 212 295 198 L295 190 Q295 184 285 184 L75 184 Q65 184 65 190 Z" fill="#FFFDF9" />
+
+        <!-- Decorative Pastel Sprinkles on Bottom Tier -->
+        <g stroke-linecap="round" stroke-width="3.5">
+          <line x1="92" y1="244" x2="98" y2="248" stroke="#D97B66" />
+          <line x1="125" y1="240" x2="120" y2="246" stroke="#8FB9AA" />
+          <line x1="158" y1="248" x2="165" y2="245" stroke="#E899A8" />
+          <line x1="196" y1="242" x2="202" y2="248" stroke="#F4A261" />
+          <line x1="234" y1="246" x2="229" y2="251" stroke="#8FB9AA" />
+          <line x1="265" y1="241" x2="271" y2="246" stroke="#D97B66" />
+        </g>
+
+        <!-- Top Cake Tier -->
+        <rect x="102" y="122" width="156" height="64" rx="14" fill="url(#topTierGrad)" />
+        <!-- Top Tier Drip Frosting -->
+        <path d="M102 132 Q115 148 128 132 Q141 152 154 132 Q167 146 180 132 Q193 151 206 132 Q219 145 232 132 Q245 148 258 132 L258 122 Q258 116 248 116 L112 116 Q102 116 102 122 Z" fill="#FADADD" />
+
+        <!-- Cute Little Strawberries / Cherries on Top Rim -->
+        <circle cx="116" cy="114" r="7" fill="#E06D7B" />
+        <circle cx="114" cy="112" r="2" fill="#FFF" opacity="0.6" />
+        <circle cx="244" cy="114" r="7" fill="#E06D7B" />
+        <circle cx="242" cy="112" r="2" fill="#FFF" opacity="0.6" />
+
+        <!-- ==================================================================
+             THREE STRIPED CANDLES + WICKS + FLAMES + SMOKE WISPS
+             ================================================================== -->
+        <!-- Left Candle (x = 136) -->
+        <g>
+          <rect x="130" y="72" width="12" height="44" rx="4" fill="#FFFDF9" stroke="#E899A8" stroke-width="1.5" />
+          <path d="M130 82 L142 78 M130 94 L142 90 M130 106 L142 102" stroke="#E899A8" stroke-width="3" />
+          <!-- Wick -->
+          <line x1="136" y1="72" x2="136" y2="64" stroke="#4A3728" stroke-width="2" stroke-linecap="round" />
+          <!-- Halo & Flame -->
+          <circle cx="136" cy="50" r="22" fill="url(#haloGrad)" class="candle-halo" />
+          <path d="M136 32 C144 44, 145 56, 136 62 C127 56, 128 44, 136 32 Z" fill="url(#flameGrad)" class="candle-flame" />
+          <!-- Rising Smoke (visible when blown out) -->
+          <path d="M136 62 Q130 50 138 40 T134 20" fill="none" stroke="#9E948C" stroke-width="2" stroke-linecap="round" class="smoke-wisp" />
+        </g>
+
+        <!-- Center Candle (x = 180) -->
+        <g>
+          <rect x="174" y="64" width="12" height="52" rx="4" fill="#FFFDF9" stroke="#D97B66" stroke-width="1.5" />
+          <path d="M174 75 L186 71 M174 88 L186 84 M174 101 L186 97" stroke="#D97B66" stroke-width="3" />
+          <!-- Wick -->
+          <line x1="180" y1="64" x2="180" y2="55" stroke="#4A3728" stroke-width="2" stroke-linecap="round" />
+          <!-- Halo & Flame -->
+          <circle cx="180" cy="40" r="24" fill="url(#haloGrad)" class="candle-halo" />
+          <path d="M180 21 C189 34, 190 47, 180 53 C170 47, 171 34, 180 21 Z" fill="url(#flameGrad)" class="candle-flame" />
+          <!-- Rising Smoke -->
+          <path d="M180 53 Q187 40 179 29 T183 10" fill="none" stroke="#9E948C" stroke-width="2.2" stroke-linecap="round" class="smoke-wisp delay-1" />
+        </g>
+
+        <!-- Right Candle (x = 224) -->
+        <g>
+          <rect x="218" y="72" width="12" height="44" rx="4" fill="#FFFDF9" stroke="#8FB9AA" stroke-width="1.5" />
+          <path d="M218 82 L230 78 M218 94 L230 90 M218 106 L230 102" stroke="#8FB9AA" stroke-width="3" />
+          <!-- Wick -->
+          <line x1="224" y1="72" x2="224" y2="64" stroke="#4A3728" stroke-width="2" stroke-linecap="round" />
+          <!-- Halo & Flame -->
+          <circle cx="224" cy="50" r="22" fill="url(#haloGrad)" class="candle-halo" />
+          <path d="M224 32 C232 44, 233 56, 224 62 C215 56, 216 44, 224 32 Z" fill="url(#flameGrad)" class="candle-flame" />
+          <!-- Rising Smoke -->
+          <path d="M224 62 Q218 50 226 40 T222 20" fill="none" stroke="#9E948C" stroke-width="2" stroke-linecap="round" class="smoke-wisp delay-2" />
+        </g>
+      </svg>
+    </div>
+
+    <!-- Interactive Action Button Below Cake -->
+    <div class="flex flex-col items-center gap-3 z-10">
+      <button
+        id="blowCandlesBtn"
+        type="button"
+        class="group relative inline-flex items-center gap-2.5 px-7 py-3.5 rounded-full bg-terracotta hover:bg-[#c86a55] active:scale-95 text-white font-sans font-semibold text-base sm:text-lg shadow-lg shadow-terracotta/25 transition-all duration-200 cursor-pointer"
+      >
+        <!-- Wind / Sparkle Icon -->
+        <svg id="btnIcon" class="w-5 h-5 transition-transform duration-300 group-hover:translate-x-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M17.7 7.7a2.5 2.5 0 1 1 1.8 4.3H2"/>
+          <path d="M9.6 4.6A2 2 0 1 1 11 8H2"/>
+          <path d="M12.6 19.4A2 2 0 1 0 14 16H2"/>
+        </svg>
+        <span id="btnLabel">Blow the Candles</span>
+      </button>
+
+      <!-- Subtle Relight Link (appears after candles are blown) -->
+      <button
+        id="relightBtn"
+        type="button"
+        class="hidden text-xs font-medium text-cocoa/60 hover:text-terracotta underline underline-offset-4 transition-colors cursor-pointer"
+      >
+        🕯️ Relight candles
+      </button>
+    </div>
+
+    <!-- Scroll Down Cue -->
+    <a
+      id="scrollCue"
+      href="#memories"
+      class="mt-12 inline-flex flex-col items-center gap-1.5 text-cocoa/65 hover:text-terracotta transition-all duration-500 animate-bounce"
+    >
+      <span class="font-handwriting text-2xl font-semibold">Scroll down for our memories</span>
+      <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 5v14M19 12l-7 7-7-7"/>
+      </svg>
+    </a>
+  </header>
+
+
+  <!-- ========================================================================
+       SECTION 2: "OUR MEMORIES" INTERACTIVE POLAROID DESK
+       ======================================================================== -->
+  <section id="memories" class="relative py-16 sm:py-24 px-4 sm:px-8 border-y border-cocoa/10 memory-desk">
+    <div class="max-w-5xl mx-auto">
+
+      <!-- Section Heading & Controls -->
+      <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-8 text-center sm:text-left">
+        <div>
+          <span class="inline-block px-3 py-1 rounded-full bg-cream/80 text-terracotta text-xs font-semibold uppercase tracking-wider mb-2 shadow-sm">
+            📸 फोटो सेशन
+          </span>
+          <h2 class="font-serif text-3xl sm:text-5xl font-bold text-cocoa">
+            HUMARI EK-ADHI फोटू😋
+          </h2>
+          <p class="mt-2 text-sm sm:text-base text-cocoa/80 max-w-xl">
+            ZRRA YE POLAROID HILA KR DEKHO 💦(DRAG IT🤭)
+          </p>
+        </div>
+
+        <!-- Reset Pile Button -->
+        <div class="flex justify-center sm:justify-end">
+          <button
+            id="resetDeskBtn"
+            type="button"
+            class="inline-flex items-center gap-2 px-4 py-2.5 rounded-full bg-cream/90 hover:bg-white text-cocoa border border-cocoa/15 text-sm font-medium shadow-sm active:scale-95 transition-all cursor-pointer"
+          >
+            <svg class="w-4 h-4 text-terracotta" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
+              <path d="M3 3v5h5"/>
+            </svg>
+            Reset Pile
+          </button>
+        </div>
+      </div>
+
+      <!-- ====================================================================
+           DRAGGABLE POLAROID DESK ARENA
+           - Secret sticky notes sit in the background layer (z-index: 1)
+           - Draggable Polaroids sit on top (z-index: 10+)
+           ==================================================================== -->
+      <div
+        id="deskArena"
+        class="relative w-full h-[640px] sm:h-[580px] md:h-[560px] rounded-3xl border-2 border-dashed border-cocoa/20 bg-cream/35 shadow-inner overflow-hidden"
+      >
+        <!-- Subtle Desk Watermark Instruction -->
+        <div class="pointer-events-none absolute inset-0 flex items-center justify-center opacity-20">
+          <p class="font-handwriting text-3xl sm:text-4xl text-cocoa text-center px-6">
+            ✨ Move the photos aside to read what's underneath ✨
+          </p>
+        </div>
+
+        <!-- Secret Notes & Polaroid Cards are dynamically rendered & positioned by JS below
+             so resetting the pile or resizing the screen keeps everything responsive! -->
+      </div>
+    </div>
+  </section>
+
+
+  <!-- ========================================================================
+       SECTION 3: FINAL SECTION - "A LETTER FOR YOU"
+       ======================================================================== -->
+  <section id="letter" class="relative py-20 sm:py-28 px-4 sm:px-6">
+    <div class="max-w-2xl mx-auto">
+
+      <!-- Section Intro -->
+      <div class="text-center mb-10">
+        <span class="inline-block px-3.5 py-1 rounded-full bg-blush/60 text-cocoa text-xs font-semibold uppercase tracking-wider mb-2">
+          Thodi tareef bhi kr he dete h 🤭
+        </span>
+        <h2 class="font-serif text-3xl sm:text-5xl font-bold text-cocoa">
+          A Letter For You
+        </h2>
+      </div>
+
+      <!-- Vintage Stationery Letter Card -->
+      <article class="relative rounded-2xl sm:rounded-3xl bg-[#FFFDF9] border border-cocoa/15 shadow-xl shadow-cocoa/10 p-6 sm:p-12 overflow-hidden">
+
+        <!-- Decorative Washi Tape at Top Center -->
+        <div class="washi-tape absolute -top-2 left-1/2 -translate-x-1/2 w-28 h-7 -rotate-2 rounded-sm pointer-events-none"></div>
+
+        <!-- Postage Stamp Doodle in Top-Right Corner -->
+        <div class="hidden sm:flex flex-col items-center justify-center w-16 h-20 border-2 border-dashed border-roseDust/70 rounded-md bg-blush/20 text-terracotta float-right ml-4 mb-2 rotate-3 select-none" aria-hidden="true">
+          <span class="text-xl">🎂</span>
+          <span class="font-handwriting text-sm font-bold leading-none mt-1">100%</span>
+          <span class="text-[9px] uppercase tracking-widest">Bestie</span>
+        </div>
+
+        <!-- ==================================================================
+             CUSTOMIZE HERE: EDIT YOUR PERSONAL BIRTHDAY LETTER TEXT & SIGN-OFF
+             ================================================================== -->
+        <div class="letter-paper pt-2 text-cocoa font-serif text-base sm:text-lg">
+          <p class="font-handwriting text-3xl sm:text-4xl font-bold text-terracotta mb-4">
+            Dearest JATT,
+          </p>
+
+          <p class="mb-6">
+            Happy, happy birthday! Today is all about celebrating the birthday of the shehzadii✨😋 
+          </p>
+
+          <p class="mb-6">
+            Thank you for being my biggest cheerleader, and my favorite partner-in-crime through every season of life. You deserve every bit of joy by every bit i mean iss duniyaa ki कण-कण ki khushiyaann tujhee mile meri dua bss ye he hai aur ye he humesha mai mangta hu tere liyee✨✨...and ik mai teri expectations poori nhi kr pata but ekdin dekh tujhe itna tagda surprise dunga pagal he hojana h  tune yk those dream surprises ofc you know them tere se zyada sapne kon dekhta h ..i hope tere sapne saree poore hoo🧿🧿
+          </p>
+
+          <p class="mb-6">
+            Never forget how deeply loved and appreciated you are—today and every single day.Overthink thoda kum kiyaa krr cuz YOU ARE THE KINDEST SOUL ....PRETTIESTT ....FUNNIESSTTT AND THEE BESSTTT BESSTTT  bessttesstt friend one could everr askk forrr💞💞 mai toh mtlb jealous hojata hu agr apka koi aur khaas mittar bnjata h toh 🥹🥹 vo alg baat h mai khudh he gayab hogya tha and i am verryy sorryy for thattt  i am not a good wala bestfriend but all i'll say is ki tere liyee mai humesha acha he sochta hu tujhe dil se apna khass mittarr manta hu bhle he kuch bhi bakk du mai tujhe kitna bhi tang krlu pr tere jaisa kahi sachi milna nhi mujhe and mera vanvas jb chl rha tha toh bhi maine bhtt yaad kiya tujhe vo sara park mei milna and all dubara socha baat bhi kru but bss kr nhi paya tb but yk what ..i feel like ki apni dostii bhtt special h tbhi ek din aesi yaad aayi tu ki tujhe call krdiya fir hum phele jaise hone lge i think its all god jo mujhe kbhi durr nhi krenge teri tatiii baatien sunn ne se but lowk mera mann bhi nhi lgta teri tatti baatien sune bina ...YOU ARE THEE BESTTTTT JUST NEVER THINK LESS OF YOuRSELF tere se zyada mujhe bura lgta h jb tu apne bare aese bura bura bolti h tu mt bola kr pleasee AAJ HE tareef krunga bss teri ye tujhe bhi pta h 😂😂CHL HAPPIIESSTT BIRTHDAYYYYYY LAALIII KHUSH RAHA KR BSS🥹🥹✨✨🫂🫂
+          </p>
+
+          <div class="mt-8 flex flex-col sm:flex-row sm:items-end justify-between gap-6">
+            <div>
+              <p class="italic text-cocoa/80 text-base">Forever in your corner,</p>
+              <p class="font-handwriting text-3xl sm:text-4xl font-bold text-cocoa mt-1">
+                Your LALLA 💛
+              </p>
+            </div>
+
+            <!-- Decorative Wax Seal -->
+            <div class="self-end sm:self-auto flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-br from-terracotta to-[#b85642] text-cream shadow-md border-4 border-[#e59380]/60 select-none" title="Sealed with love">
+              <svg class="w-7 h-7" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+              </svg>
+            </div>
+          </div>
+        </div>
+      </article>
+
+      <!-- Bottom Celebration Replay Button & Footer -->
+      <div class="mt-10 text-center">
+        <button
+          id="replayConfettiBtn"
+          type="button"
+          class="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-parchment hover:bg-blush/50 text-cocoa border border-roseDust/50 font-sans font-semibold text-sm sm:text-base shadow-sm active:scale-95 transition-all cursor-pointer"
+        >
+          <span>Replay Confetti 🎉</span>
+        </button>
+
+        <p class="mt-8 text-xs text-cocoa/50 font-sans">
+          Made with 💛 for the best friend anyone could ask for
+        </p>
+      </div>
+    </div>
+  </section>
+
+
+<!-- Floating Music Toggle Button -->
+<button id="music-toggle" style="position: fixed; bottom: 20px; right: 20px; z-index: 9999; padding: 10px 16px; border-radius: 50px; border: none; background: #ff6b81; color: white; font-weight: bold; cursor: pointer; box-shadow: 0 4px 12px rgba(0,0,0,0.2);">
+  🎵 Play Music
+</button>
+
+
+  <!-- ========================================================================
+       JAVASCRIPT: CANDLE INTERACTION, CONFETTI & DRAGGABLE POLAROID DESK
+       ======================================================================== -->
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+
+      const songs = {
+        hero: document.getElementById('song-hero'),
+        memories: document.getElementById('song-memories'),
+        letter: document.getElementById('song-letter')
+      };
+
+      const musicBtn = document.getElementById('music-toggle');
+      let isMusicAllowed = false;
+      let currentSection = 'hero';
+      let fadeIntervals = {};
+
+      function fadeAudio(audio, targetVolume) {
+        if (!audio) return;
+        clearInterval(fadeIntervals[audio.id]);
+
+        if (targetVolume > 0 && audio.paused) {
+          audio.volume = 0;
+          audio.play().catch(() => {});
+        }
+
+        fadeIntervals[audio.id] = setInterval(() => {
+          const step = 0.05;
+          if (Math.abs(audio.volume - targetVolume) <= step) {
+            audio.volume = targetVolume;
+            if (targetVolume === 0) audio.pause();
+            clearInterval(fadeIntervals[audio.id]);
+          } else if (audio.volume < targetVolume) {
+            audio.volume = Math.min(1, audio.volume + step);
+          } else {
+            audio.volume = Math.max(0, audio.volume - step);
+          }
+        }, 80);
+      }
+      function playSectionSong(sectionId) {
+        if (!isMusicAllowed) return;
+        Object.keys(songs).forEach(key => {
+          if (key === sectionId) {
+            fadeAudio(songs[key], 0.8);
+          } else {
+            fadeAudio(songs[key], 0);
+          }
+        });
+      }
+
+      function enableMusic() {
+        if (!isMusicAllowed) {
+          isMusicAllowed = true;
+          musicBtn.innerText = '🔊 Music On';
+          playSectionSong(currentSection);
+        }
+      }
+
+      musicBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (!isMusicAllowed) {
+          enableMusic();
+        } else {
+          isMusicAllowed = false;
+          musicBtn.innerText = '🔇 Music Off';
+          Object.values(songs).forEach(audio => fadeAudio(audio, 0));
+        }
+      });
+
+      document.addEventListener('click', enableMusic, { once: true });
+
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            currentSection = entry.target.id;
+            playSectionSong(currentSection);
+          }
+        });
+      }, {
+        threshold: 0.45
+      });
+      ['hero', 'memories', 'letter'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) observer.observe(el);
+      });
+
+      /* ----------------------------------------------------------------------
+         1. CONFETTI CELEBRATION HELPER
+         ---------------------------------------------------------------------- */
+      function fireBirthdayConfetti() {
+        if (typeof confetti !== 'function') return;
+
+        const pastelColors = ['#FADADD', '#D97B66', '#FFD166', '#8FB9AA', '#E899A8', '#FFF1C1'];
+
+        // Center burst
+        confetti({
+          particleCount: 85,
+          spread: 75,
+          origin: { y: 0.6 },
+          colors: pastelColors,
+          scalar: 1.05
+        });
+
+        // Side cannons for extra celebration feel
+        setTimeout(() => {
+          confetti({
+            particleCount: 45,
+            angle: 60,
+            spread: 55,
+            origin: { x: 0, y: 0.65 },
+            colors: pastelColors
+          });
+          confetti({
+            particleCount: 45,
+            angle: 120,
+            spread: 55,
+            origin: { x: 1, y: 0.65 },
+            colors: pastelColors
+          });
+        }, 180);
+      }
+
+      /* ----------------------------------------------------------------------
+         2. HERO CAKE: BLOW & RELIGHT CANDLES
+         ---------------------------------------------------------------------- */
+      const cakeContainer = document.getElementById('cakeContainer');
+      const blowCandlesBtn = document.getElementById('blowCandlesBtn');
+      const btnLabel = document.getElementById('btnLabel');
+      const btnIcon = document.getElementById('btnIcon');
+      const relightBtn = document.getElementById('relightBtn');
+      let candlesBlown = false;
+
+      blowCandlesBtn.addEventListener('click', () => {
+        if (!candlesBlown) {
+          candlesBlown = true;
+          cakeContainer.classList.add('candles-blown');
+
+          // Update button state to "Wish Made! ✨"
+          btnLabel.textContent = 'Wish Made! ✨';
+          btnIcon.classList.add('hidden');
+          blowCandlesBtn.classList.remove('bg-terracotta', 'hover:bg-[#c86a55]');
+          blowCandlesBtn.classList.add('bg-[#7FA898]', 'hover:bg-[#6e9787]');
+
+          // Show relight option
+          relightBtn.classList.remove('hidden');
+
+          // Launch confetti!
+          fireBirthdayConfetti();
+        } else {
+          // Clicking again gives an extra celebratory burst
+          fireBirthdayConfetti();
+        }
+      });
+
+      relightBtn.addEventListener('click', () => {
+        candlesBlown = false;
+        cakeContainer.classList.remove('candles-blown');
+
+        btnLabel.textContent = 'Blow the Candles';
+        btnIcon.classList.remove('hidden');
+        blowCandlesBtn.classList.add('bg-terracotta', 'hover:bg-[#c86a55]');
+        blowCandlesBtn.classList.remove('bg-[#7FA898]', 'hover:bg-[#6e9787]');
+        relightBtn.classList.add('hidden');
+      });
+
+      // Bottom "Replay Confetti" button
+      document.getElementById('replayConfettiBtn').addEventListener('click', fireBirthdayConfetti);
+
+
+      /* ----------------------------------------------------------------------
+         3. "OUR MEMORIES" POLAROID DATA & DRAGGABLE DESK LOGIC
+         ----------------------------------------------------------------------
+         CUSTOMIZE HERE:
+         - Replace `imageUrl` with your own photo URL (e.g., 'photos/trip.jpg').
+           If `imageUrl` is left empty (''), a cute illustrated pastel card renders!
+         - Edit `caption` for the handwritten text on the Polaroid frame.
+         - Edit `secretMessage` for the sticky note hidden underneath each photo!
+         ---------------------------------------------------------------------- */
+      const memoriesData = [
+        {
+          id: 'mem-1',
+          caption: 'Best PHOTO FOREVER',
+          date: 'Day One',
+          imageUrl: 'pic2.jpeg', // <-- Optional: add your photo URL here!
+          gradient: 'from-[#FADADD] via-[#FFE5D9] to-[#F7D1CD]',
+          emoji: '☕✨',
+          secretMessage: 'Secret Note #1: BHYI kya msstt din the thrive-aid and ye photo toh kaise he bhul jauu mai✨Your comapny is so fun😋',
+          noteColor: 'bg-butter',
+          // Relative percentages on desk (x%, y%, rotation deg)
+          desktopPos: { x: 10, y: 12, rot: -7 },
+          mobilePos:  { x: 6,  y: 8,  rot: -6 }
+        },
+        {
+          id: 'mem-2',
+          caption: 'ALL I do is LAUGH ',
+          date: '2:00 AM',
+          imageUrl: 'pic1.png',
+          gradient: 'from-[#D8E2DC] via-[#ECE4DB] to-[#FFE5D9]',
+          emoji: '🌙😂',
+          secretMessage: 'Secret Note #2: Nobody else on this planet can make me laugh until my stomach hurts (Sirr toh dard krti he h tu pet bhi dard krdeti h 🫃🏿).',
+          noteColor: 'bg-blush',
+          desktopPos: { x: 38, y: 10, rot: 5 },
+          mobilePos:  { x: 42, y: 10, rot: 5 }
+        },
+        {
+          id: 'mem-3',
+          caption: 'VELLA din ',
+          date: 'Best Weekend',
+          imageUrl: 'pic3.png',
+          gradient: 'from-[#FDE4CF] via-[#FBF8CC] to-[#FFCFD2]',
+          emoji: '🌅🎶',
+          secretMessage: 'Secret Note #3: MALL and minisoo wallaa timee kya mstt h laughed my ass off i miss those days 😭😭',
+          noteColor: 'bg-sage',
+          desktopPos: { x: 66, y: 14, rot: -4 },
+          mobilePos:  { x: 12, y: 36, rot: 4 }
+        },
+        {
+          id: 'mem-4',
+          caption: 'WHO AM I without MY JATT 👯‍♀️',
+          date: 'Always',
+          imageUrl: 'pic4.png',
+          gradient: 'from-[#E2ECE9] via-[#DFE7FD] to-[#FAD2E1]',
+          emoji: '💖👑',
+          secretMessage: 'Secret Note #4: Thank you for always listening my rants ,kuch bhi bakk deta hu mai shukr h judge nhi krti tu but baad mei embarrassed mt feel krwaya crow zee😭',
+          noteColor: 'bg-butter',
+          desktopPos: { x: 22, y: 46, rot: 6 },
+          mobilePos:  { x: 44, y: 38, rot: -5 }
+        },
+        {
+          id: 'mem-5',
+          caption: 'Here’s to Many More 🥂',
+          date: 'Forever',
+          imageUrl: 'pic5.jpeg',
+          gradient: 'from-[#FFDDD2] via-[#F8EDEB] to-[#FCD5CE]',
+          emoji: '🎂🎈',
+          secretMessage: 'Secret Note #5: No matter where life takes us, you will always have a front-row seat in my life. Happy Birthday LALLU PRASAD!',
+          noteColor: 'bg-blush',
+          desktopPos: { x: 54, y: 45, rot: -6 },
+          mobilePos:  { x: 24, y: 62, rot: 3 }
+        }
+      ];
+
+      const deskArena = document.getElementById('deskArena');
+      let highestZ = 20;
+
+      // Build Secret Sticky Notes & Draggable Polaroid Cards
+      function renderDeskItems() {
+        // Clear existing items (preserving the background watermark)
+        deskArena.querySelectorAll('.secret-note, .polaroid-card').forEach(el => el.remove());
+
+        const isMobile = window.innerWidth < 640;
+
+        memoriesData.forEach((item, index) => {
+          const pos = isMobile ? item.mobilePos : item.desktopPos;
+
+          // 1. Create Hidden Sticky Note Underneath
+          const note = document.createElement('div');
+          note.className = `secret-note absolute w-44 sm:w-52 p-3.5 rounded-xl shadow-md border border-cocoa/10 ${item.noteColor} text-cocoa pointer-events-none select-none`;
+          note.style.left = `${pos.x + 1}%`;
+          note.style.top = `${pos.y + 3}%`;
+          note.style.transform = `rotate(${-pos.rot * 0.7}deg)`;
+          note.style.zIndex = 2;
+          note.innerHTML = `
+            <div class="flex items-center justify-between mb-1">
+              <span class="text-[10px] font-bold uppercase tracking-wider text-terracotta">Hidden Memory</span>
+              <span class="text-xs">📌</span>
+            </div>
+            <p class="font-handwriting text-lg sm:text-xl leading-snug text-cocoa">
+              ${item.secretMessage}
+            </p>
+          `;
+          deskArena.appendChild(note);
+
+          // 2. Create Draggable Polaroid Card On Top
+          const card = document.createElement('div');
+          card.className = 'polaroid-card absolute w-44 sm:w-56 bg-[#FFFDF9] p-2.5 sm:p-3 pb-4 sm:pb-5 rounded-xl shadow-lg border border-cocoa/10 cursor-grab';
+          card.style.left = `${pos.x}%`;
+          card.style.top = `${pos.y}%`;
+          card.style.transform = `rotate(${pos.rot}deg)`;
+          card.style.zIndex = 10 + index;
+          card.dataset.rot = pos.rot;
+
+          // Photo area: renders <img> if imageUrl is set, otherwise a charming pastel illustrated card
+          const photoMarkup = item.imageUrl
+            ? `<img src="${item.imageUrl}" alt="${item.caption}" class="w-full h-full object-cover rounded-md pointer-events-none" onerror="this.style.display='none'" />`
+            : `<div class="w-full h-full rounded-md bg-gradient-to-br ${item.gradient} flex flex-col items-center justify-center p-2 text-center">
+                 <span class="text-3xl sm:text-4xl mb-1 drop-shadow-sm">${item.emoji}</span>
+                 <span class="text-[10px] sm:text-xs font-medium uppercase tracking-widest text-cocoa/60">${item.date}</span>
+               </div>`;
+
+          card.innerHTML = `
+            <!-- Washi Tape Strip -->
+            <div class="washi-tape absolute -top-2.5 left-1/2 -translate-x-1/2 w-16 h-4 rounded-sm pointer-events-none"></div>
+            <!-- Photo Frame -->
+            <div class="w-full h-32 sm:h-40 overflow-hidden rounded-md bg-parchment border border-cocoa/5">
+              ${photoMarkup}
+            </div>
+            <!-- Handwritten Caption -->
+            <p class="mt-2.5 font-handwriting text-xl sm:text-2xl font-bold text-center text-cocoa leading-none">
+              ${item.caption}
+            </p>
+          `;
+
+          deskArena.appendChild(card);
+          attachDragHandlers(card);
+        });
+      }
+
+      /* ----------------------------------------------------------------------
+         4. UNIFIED MOUSE & TOUCH DRAG-AND-DROP HANDLER
+         ---------------------------------------------------------------------- */
+      function attachDragHandlers(card) {
+        let isDragging = false;
+        let startX = 0;
+        let startY = 0;
+        let initialLeft = 0;
+        let initialTop = 0;
+
+        function onPointerDown(e) {
+          // Only respond to primary mouse button or touch
+          if (e.type === 'mousedown' && e.button !== 0) return;
+
+          isDragging = true;
+          highestZ += 1;
+          card.style.zIndex = highestZ;
+          card.classList.add('is-dragging');
+
+          const clientX = e.type.startsWith('touch') ? e.touches[0].clientX : e.clientX;
+          const clientY = e.type.startsWith('touch') ? e.touches[0].clientY : e.clientY;
+
+          startX = clientX;
+          startY = clientY;
+          initialLeft = card.offsetLeft;
+          initialTop = card.offsetTop;
+
+          // Slight lift tilt while dragging
+          const baseRot = parseFloat(card.dataset.rot) || 0;
+          card.style.transform = `rotate(${baseRot * 0.4}deg) scale(1.04)`;
+
+          document.addEventListener('mousemove', onPointerMove);
+          document.addEventListener('mouseup', onPointerUp);
+          document.addEventListener('touchmove', onPointerMove, { passive: false });
+          document.addEventListener('touchend', onPointerUp);
+        }
+
+        function onPointerMove(e) {
+          if (!isDragging) return;
+          if (e.cancelable) e.preventDefault();
+
+          const clientX = e.type.startsWith('touch') ? e.touches[0].clientX : e.clientX;
+          const clientY = e.type.startsWith('touch') ? e.touches[0].clientY : e.clientY;
+
+          const dx = clientX - startX;
+          const dy = clientY - startY;
+
+          // Keep card within desk arena bounds with comfortable margin
+          const maxLeft = deskArena.clientWidth - card.offsetWidth * 0.65;
+          const maxTop = deskArena.clientHeight - card.offsetHeight * 0.65;
+          const minLeft = -card.offsetWidth * 0.35;
+          const minTop = -card.offsetHeight * 0.25;
+
+          const nextLeft = Math.min(Math.max(initialLeft + dx, minLeft), maxLeft);
+          const nextTop = Math.min(Math.max(initialTop + dy, minTop), maxTop);
+
+          card.style.left = `${nextLeft}px`;
+          card.style.top = `${nextTop}px`;
+        }
+
+        function onPointerUp() {
+          if (!isDragging) return;
+          isDragging = false;
+          card.classList.remove('is-dragging');
+
+          const baseRot = parseFloat(card.dataset.rot) || 0;
+          card.style.transform = `rotate(${baseRot}deg) scale(1)`;
+
+          document.removeEventListener('mousemove', onPointerMove);
+          document.removeEventListener('mouseup', onPointerUp);
+          document.removeEventListener('touchmove', onPointerMove);
+          document.removeEventListener('touchend', onPointerUp);
+        }
+
+        card.addEventListener('mousedown', onPointerDown);
+        card.addEventListener('touchstart', onPointerDown, { passive: true });
+      }
+
+      // Initial render & Reset Pile button
+      renderDeskItems();
+      document.getElementById('resetDeskBtn').addEventListener('click', () => {
+        highestZ = 20;
+        renderDeskItems();
+      });
+
+      // Re-layout cleanly if screen crosses mobile/desktop breakpoint
+      let lastIsMobile = window.innerWidth < 640;
+      window.addEventListener('resize', () => {
+        const currentIsMobile = window.innerWidth < 640;
+        if (currentIsMobile !== lastIsMobile) {
+          lastIsMobile = currentIsMobile;
+          renderDeskItems();
+        }
+      });
+      
+    });
+    
+    
+  </script>
+</body>
+</html>
